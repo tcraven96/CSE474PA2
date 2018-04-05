@@ -9,28 +9,28 @@ import pickle
 import sys
 
 def ldaLearn(X,y):
-    # Inputs
-    # X - a N x d matrix with each row corresponding to a training example
-    # y - a N x 1 column vector indicating the labels for each training example
-    #
-    # Outputs
-    # means - A k x d matrix containing learnt means for each of the k classes
-    # covmat - A single d x d learnt covariance matrix 
-    
-    # IMPLEMENT THIS METHOD 
-    return means,covmat
+	# Inputs
+	# X - a N x d matrix with each row corresponding to a training example
+	# y - a N x 1 column vector indicating the labels for each training example
+	#
+	# Outputs
+	# means - A k x d matrix containing learnt means for each of the k classes
+	# covmat - A single d x d learnt covariance matrix
+
+	# IMPLEMENT THIS METHOD
+	return means,covmat
 
 def qdaLearn(X,y):
-    # Inputs
-    # X - a N x d matrix with each row corresponding to a training example
-    # y - a N x 1 column vector indicating the labels for each training example
+	# Inputs
+	# X - a N x d matrix with each row corresponding to a training example
+	# y - a N x 1 column vector indicating the labels for each training example
     #
-    # Outputs
-    # means - A k x d matrix containing learnt means for each of the k classes
-    # covmats - A list of k d x d learnt covariance matrices for each of the k classes
-    
-    # IMPLEMENT THIS METHOD
-    return means,covmats
+	# Outputs
+	# means - A k x d matrix containing learnt means for each of the k classes
+	# covmats - A list of k d x d learnt covariance matrices for each of the k classes
+
+	# IMPLEMENT THIS METHOD
+	return means,covmats
 
 def ldaTest(means,covmat,Xtest,ytest):
     # Inputs
@@ -41,8 +41,8 @@ def ldaTest(means,covmat,Xtest,ytest):
     # acc - A scalar accuracy value
     # ypred - N x 1 column vector indicating the predicted labels
 
-    # IMPLEMENT THIS METHOD
-    return acc,ypred
+	# IMPLEMENT THIS METHOD
+	return acc,ypred
 
 def qdaTest(means,covmats,Xtest,ytest):
     # Inputs
@@ -50,18 +50,19 @@ def qdaTest(means,covmats,Xtest,ytest):
     # Xtest - a N x d matrix with each row corresponding to a test example
     # ytest - a N x 1 column vector indicating the labels for each test example
     # Outputs
-    # acc - A scalar accuracy value
-    # ypred - N x 1 column vector indicating the predicted labels
+	# acc - A scalar accuracy value
+	# ypred - N x 1 column vector indicating the predicted labels
 
-    # IMPLEMENT THIS METHOD
-    return acc,ypred
+	# IMPLEMENT THIS METHOD
+	return acc,ypred
 
 def learnOLERegression(X,y):
-    # Inputs:                                                         
+    # Inputs:`
     # X = N x d 
     # y = N x 1                                                               
     # Output: 
-    # w = d x 1 
+    # w = d x 1
+    w = np.dot(np.dot((inv(np.dot(X.T,X))), X.T),y)
 	
     # IMPLEMENT THIS METHOD                                                   
     return w
@@ -84,7 +85,8 @@ def testOLERegression(w,Xtest,ytest):
     # ytest = X x 1
     # Output:
     # mse
-    
+    N = len(Xtest)
+    mse = np.dot((ytest - np.dot(Xtest,w)).T,(ytest -np.dot(Xtest,w)))/N
     # IMPLEMENT THIS METHOD
     return mse
 
@@ -93,9 +95,10 @@ def regressionObjVal(w, X, y, lambd):
     # compute squared error (scalar) and gradient of squared error with respect
     # to w (vector) for the given data X and y and the regularization parameter
     # lambda                                                                  
-
-    # IMPLEMENT THIS METHOD                                             
-    return error, error_grad
+	error = 1
+	error_grad = 1
+	# IMPLEMENT THIS METHOD
+	return error, error_grad
 
 def mapNonLinear(x,p):
     # Inputs:                                                                  
@@ -103,9 +106,9 @@ def mapNonLinear(x,p):
     # p - integer (>= 0)                                                       
     # Outputs:                                                                 
     # Xp - (N x (p+1)) 
-	
+	Xp = 1
     # IMPLEMENT THIS METHOD
-    return Xp
+	return Xp
 
 # Main script
 
@@ -232,7 +235,7 @@ for p in range(pmax):
     mses5[p,0] = testOLERegression(w_d1,Xdtest,ytest)
     w_d2 = learnRidgeRegression(Xd,y,lambda_opt)
     mses5_train[p,1] = testOLERegression(w_d2,Xd,y)
-    mses5[p,1] = testOLERegression(w_d2,Xdtest,ytest)
+	mses5[p,1] = testOLERegression(w_d2,Xdtest,ytest)
 
 fig = plt.figure(figsize=[12,6])
 plt.subplot(1, 2, 1)
