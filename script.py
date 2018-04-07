@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import pickle
 import sys
 
-def ldaLearn(X,y):
+"""def ldaLearn(X,y):
 	# Inputs
 	# X - a N x d matrix with each row corresponding to a training example
 	# y - a N x 1 column vector indicating the labels for each training example
@@ -54,7 +54,7 @@ def qdaTest(means,covmats,Xtest,ytest):
 	# ypred - N x 1 column vector indicating the predicted labels
 
 	# IMPLEMENT THIS METHOD
-	return acc,ypred
+	return acc,ypred"""
 
 def learnOLERegression(X,y):
     # Inputs:`
@@ -75,7 +75,10 @@ def learnRidgeRegression(X,y,lambd):
     # Output:                                                                  
     # w = d x 1                                                                
 
-    # IMPLEMENT THIS METHOD                                                   
+    # IMPLEMENT THIS METHOD
+    length = len(X[0])
+
+    w = (np.dot(np.dot(inv(lambd*np.eye(length)+np.dot(X.T,X)),X.T),y))
     return w
 
 def testOLERegression(w,Xtest,ytest):
@@ -94,12 +97,14 @@ def regressionObjVal(w, X, y, lambd):
 
     # compute squared error (scalar) and gradient of squared error with respect
     # to w (vector) for the given data X and y and the regularization parameter
-    # lambda                                                                  
-	error = 1
-	error_grad = 1
-	# IMPLEMENT THIS METHOD
-	return error, error_grad
-
+    # lambda
+    error = np.dot((y-np.dot(X,w)).T, (y-np.dot(X,w)))/2 + (lambd*np.dot(w.T, w))/2
+    w = w.reshape(-1,1)
+    error_grad = np.dot(np.transpose(X), (np.dot(X,w)-y)) + lambd * w
+    error_grad = error_grad.flatten()
+    # IMPLEMENT THIS METHOD
+    return error, error_grad
+"""
 def mapNonLinear(x,p):
     # Inputs:                                                                  
     # x - a single column vector (N x 1)                                       
@@ -151,7 +156,7 @@ plt.contourf(x1,x2,zqdares.reshape((x1.shape[0],x2.shape[0])),alpha=0.3)
 plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest)
 plt.title('QDA')
 
-plt.show()
+plt.show()"""
 # Problem 2
 if sys.version_info.major == 2:
     X,y,Xtest,ytest = pickle.load(open('diabetes.pickle','rb'))
@@ -191,6 +196,7 @@ plt.plot(lambdas,mses3)
 plt.title('MSE for Test Data')
 
 plt.show()
+
 # Problem 4
 k = 101
 lambdas = np.linspace(0, 1, num=k)
@@ -200,13 +206,13 @@ mses4 = np.zeros((k,1))
 opts = {'maxiter' : 20}    # Preferred value.                                                
 w_init = np.ones((X_i.shape[1],1))
 for lambd in lambdas:
-    args = (X_i, y, lambd)
-    w_l = minimize(regressionObjVal, w_init, jac=True, args=args,method='CG', options=opts)
-    w_l = np.transpose(np.array(w_l.x))
-    w_l = np.reshape(w_l,[len(w_l),1])
-    mses4_train[i] = testOLERegression(w_l,X_i,y)
-    mses4[i] = testOLERegression(w_l,Xtest_i,ytest)
-    i = i + 1
+	args = (X_i, y, lambd)
+	w_l = minimize(regressionObjVal, w_init, jac=True, args=args,method='CG', options=opts)
+	w_l = np.transpose(np.array(w_l.x))
+	w_l = np.reshape(w_l,[len(w_l),1])
+	mses4_train[i] = testOLERegression(w_l,X_i,y)
+	mses4[i] = testOLERegression(w_l,Xtest_i,ytest)
+	i = i + 1
 fig = plt.figure(figsize=[12,6])
 plt.subplot(1, 2, 1)
 plt.plot(lambdas,mses4_train)
@@ -221,7 +227,7 @@ plt.title('MSE for Test Data')
 plt.legend(['Using scipy.minimize','Direct minimization'])
 plt.show()
 
-
+"""
 # Problem 5
 pmax = 7
 lambda_opt = 0 # REPLACE THIS WITH lambda_opt estimated from Problem 3
@@ -247,3 +253,4 @@ plt.plot(range(pmax),mses5)
 plt.title('MSE for Test Data')
 plt.legend(('No Regularization','Regularization'))
 plt.show()
+"""
