@@ -94,7 +94,7 @@ def regressionObjVal(w, X, y, lambd):
     # compute squared error (scalar) and gradient of squared error with respect
     # to w (vector) for the given data X and y and the regularization parameter
     # lambda
-    error = np.dot(np.dot(X, w.T), np.dot(X, w.T).T) / 2 + (lambd * np.dot(w.T, w)) / 2
+    error = np.dot((y - np.dot(X, w.T), (y - np.dot(X, w.T).T)) / 2 + (lambd * np.dot(w.T, w)) / 2
     #error = np.dot((y - np.dot(X, w)).T, (y - np.dot(X, w))) / 2 + (lambd * np.dot(w.T, w)) / 2
     w = w.reshape(-1, 1)
     error_grad = np.dot(np.transpose(X), (np.dot(X, w) - y)) + lambd * w
