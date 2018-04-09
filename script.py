@@ -17,7 +17,39 @@ def ldaLearn(X,y):
     # means - A k x d matrix containing learnt means for each of the k classes
     # covmat - A single d x d learnt covariance matrix 
     
-    # IMPLEMENT THIS METHOD 
+    # IMPLEMENT THIS METHOD
+
+    N = len(X)
+    d = len(X[0])
+    k = int(y.max())
+
+    means = np.zeros((int(k), int(d)))
+    sum = np.zeros((1, d))
+    count = 0
+    covmat = np.zeros((int(d), int(d)))
+
+    for cls in range(int(k)):
+        for array in range(N):
+            if y[array] == cls+1:
+                sum[0,:] = sum[0,:] + X[array, :]
+                count = count + 1
+        means[cls, :] = sum[0,:] / count
+        sum[:,:] = 0
+        count = 0
+
+    total_mean = np.zeros((1,int(d)))
+    # print(total_mean.shape)
+    total_mean[0,:] = np.mean(X, axis=0)
+    # print(total_mean.shape)
+    ssum = np.zeros((d,d))
+    for array in range(N):
+        A = np.zeros((1, int(d)))
+        A[0, :] = X[array, :] - total_mean
+        ssum = ssum + np.dot((A).T, (A))
+    covmat = ssum / N
+
+    #LDA covariance 구할 때 mean도 class 구분 없이 계산해서 구하기?
+
     return means,covmat
 
 def qdaLearn(X,y):
@@ -28,8 +60,45 @@ def qdaLearn(X,y):
     # Outputs
     # means - A k x d matrix containing learnt means for each of the k classes
     # covmats - A list of k d x d learnt covariance matrices for each of the k classes
-    
+
     # IMPLEMENT THIS METHOD
+
+    N = len(X)
+    d = len(X[0])
+    k = int(y.max())
+
+    means = np.zeros((k,d))
+    sum = np.zeros((1, d))
+    count = 0
+    covmats = np.zeros((k,d,d))     #3-dimension
+
+    for cls in range(k):
+        for array in range(N):
+            if y[array] == cls+1:
+                sum[0,:] = sum[0,:] + X[array,:]
+                count = count +1
+        means[cls, :] = sum[0,:] / count
+        sum[:,:] = 0
+        count = 0
+
+    ssum = np.zeros((d,d))
+    for cls in range(k):
+        for array in range(N):
+            A = np.zeros((1,int(d)))
+            if y[array] == cls+1:
+                A[0,:] = X[array,:] - means[cls,:]
+                ssum = ssum + np.dot( A.T , A )
+                count = count +1
+        covmats[cls, :, :] = ssum[:,:] / count
+        ssum[:,:] = 0
+        count = 0
+
+
+    #자료형 맞추기 -> mean 구할 때 끊어지지 않는지
+    #N, N-1 등 시작 포인트 0/1 구분
+    #for i in range(k) 하면 i가 1부터 k까지 or 0부터 k-1까지?
+
+
     return means,covmats
 
 def ldaTest(means,covmat,Xtest,ytest):
@@ -42,6 +111,29 @@ def ldaTest(means,covmat,Xtest,ytest):
     # ypred - N x 1 column vector indicating the predicted labels
 
     # IMPLEMENT THIS METHOD
+
+    k = len(means)
+    N = len(Xtest)
+    d = len(Xtest[0])
+    P = np.zeros((int(k), 1))
+    ypred = np.zeros((int(N), 1))
+
+    for i in range(N):
+        for j in range(k):
+            B = np.zeros((1,int(d)))
+            B[0,:] = Xtest[i, :] - means[j, :]
+            # P[j] = (Xtest[i, :] - means[j, :]) * inv(covmat) * np.transpose(Xtest[i, :] - means[j, :])
+            # print(covmat.shape)
+            # print(B.shape)
+            P[j] = np.dot( B, np.dot(inv(covmat), B.T) )
+            # print(P[j])
+        pred_cls = np.argmin(P)
+        # print(pred_cls)
+        ypred[i] = pred_cls + 1
+        # print(ypred)
+
+    acc = np.mean((ypred == ytest).astype(float)) * 100
+
     return acc,ypred
 
 def qdaTest(means,covmats,Xtest,ytest):
@@ -54,6 +146,26 @@ def qdaTest(means,covmats,Xtest,ytest):
     # ypred - N x 1 column vector indicating the predicted labels
 
     # IMPLEMENT THIS METHOD
+
+    k = len(means)
+    N = len(Xtest)
+    d = len(Xtest[0])
+    P = np.zeros((int(k),1))
+    ypred = np.zeros((int(N),1))
+
+    for i in range(N):
+        for j in range(k):
+            B = np.zeros((1, int(d)))
+            B[0,:] = Xtest[i,:]-means[j,:]
+            # print(covmats[j,:,:])
+            # print(det(covmats[j,:,:]))
+            # print(sqrt(det(covmats[j,:,:])))
+            P[j] = ( 1/sqrt(det(covmats[j, :, :])) ) * np.exp(-np.dot( B, np.dot(inv(covmats[j,:,:]), B.T) ) /2)
+        cls = np.argmax(P)
+        ypred[i] = cls + 1
+
+    acc = np.mean((ypred == ytest).astype(float)) * 100
+
     return acc,ypred
 
 def learnOLERegression(X,y):
@@ -128,8 +240,8 @@ print('QDA Accuracy = '+str(qdaacc))
 # plotting boundaries
 x1 = np.linspace(-5,20,100)
 x2 = np.linspace(-5,20,100)
-xx1,xx2 = np.meshgrid(x1,x2)
-xx = np.zeros((x1.shape[0]*x2.shape[0],2))
+xx1,xx2 = np.meshgrid(x1,x2)                  #100*100
+xx = np.zeros((x1.shape[0]*x2.shape[0],2))    #100*100,2 ?
 xx[:,0] = xx1.ravel()
 xx[:,1] = xx2.ravel()
 
@@ -138,14 +250,14 @@ plt.subplot(1, 2, 1)
 
 zacc,zldares = ldaTest(means,covmat,xx,np.zeros((xx.shape[0],1)))
 plt.contourf(x1,x2,zldares.reshape((x1.shape[0],x2.shape[0])),alpha=0.3)
-plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest)
+plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest.flatten())
 plt.title('LDA')
 
 plt.subplot(1, 2, 2)
 
 zacc,zqdares = qdaTest(means,covmats,xx,np.zeros((xx.shape[0],1)))
 plt.contourf(x1,x2,zqdares.reshape((x1.shape[0],x2.shape[0])),alpha=0.3)
-plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest)
+plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest.flatten())
 plt.title('QDA')
 
 plt.show()
