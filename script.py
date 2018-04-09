@@ -85,7 +85,7 @@ def testOLERegression(w,Xtest,ytest):
     # Inputs:
     # w = d x 1
     # Xtest = N x d
-    # ytest = X x 1
+    # ytest = N x 1
     # Output:
     # mse
     N = len(Xtest)
@@ -98,23 +98,29 @@ def regressionObjVal(w, X, y, lambd):
     # compute squared error (scalar) and gradient of squared error with respect
     # to w (vector) for the given data X and y and the regularization parameter
     # lambda
-    error = np.dot((y-np.dot(X,w)).T, (y-np.dot(X,w)))/2 + (lambd*np.dot(w.T, w))/2
-    w = w.reshape(-1,1)
-    error_grad = np.dot(np.transpose(X), (np.dot(X,w)-y)) + lambd * w
+    w1 = w.reshape(-1, 1)
+    error = np.dot((y-np.dot(X,w1)).T, (y-np.dot(X,w1)))/2 + ((lambd/2)*np.dot(w1.T, w1))
+    error_grad = np.dot(np.transpose(X), (np.dot(X,w1)-y)) + (lambd * w1)
+    error = error.flatten()
     error_grad = error_grad.flatten()
     # IMPLEMENT THIS METHOD
     return error, error_grad
-"""
+
 def mapNonLinear(x,p):
     # Inputs:                                                                  
     # x - a single column vector (N x 1)                                       
     # p - integer (>= 0)                                                       
     # Outputs:                                                                 
-    # Xp - (N x (p+1)) 
-	Xp = 1
+    # Xp - (N x (p+1))
+    x1 = x.reshape(-1, 1)
+    recur = x1
+    Xp =x1
+    for i in range(p) :
+	    recur = recur * x1
+	    Xp = np.append(Xp, recur, 1)
     # IMPLEMENT THIS METHOD
-	return Xp
-
+    return Xp
+"""
 # Main script
 
 # Problem 1
@@ -182,6 +188,7 @@ lambdas = np.linspace(0, 1, num=k)
 i = 0
 mses3_train = np.zeros((k,1))
 mses3 = np.zeros((k,1))
+
 for lambd in lambdas:
     w_l = learnRidgeRegression(X_i,y,lambd)
     mses3_train[i] = testOLERegression(w_l,X_i,y)
@@ -227,10 +234,10 @@ plt.title('MSE for Test Data')
 plt.legend(['Using scipy.minimize','Direct minimization'])
 plt.show()
 
-"""
+
 # Problem 5
 pmax = 7
-lambda_opt = 0 # REPLACE THIS WITH lambda_opt estimated from Problem 3
+lambda_opt = 0.06 # REPLACE THIS WITH lambda_opt estimated from Problem 3
 mses5_train = np.zeros((pmax,2))
 mses5 = np.zeros((pmax,2))
 for p in range(pmax):
@@ -241,7 +248,7 @@ for p in range(pmax):
     mses5[p,0] = testOLERegression(w_d1,Xdtest,ytest)
     w_d2 = learnRidgeRegression(Xd,y,lambda_opt)
     mses5_train[p,1] = testOLERegression(w_d2,Xd,y)
-	mses5[p,1] = testOLERegression(w_d2,Xdtest,ytest)
+    mses5[p,1] = testOLERegression(w_d2,Xdtest,ytest)
 
 fig = plt.figure(figsize=[12,6])
 plt.subplot(1, 2, 1)
@@ -253,4 +260,3 @@ plt.plot(range(pmax),mses5)
 plt.title('MSE for Test Data')
 plt.legend(('No Regularization','Regularization'))
 plt.show()
-"""
