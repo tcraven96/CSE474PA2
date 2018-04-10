@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 import pickle
 import sys
 
-"""def ldaLearn(X,y):
+
+def ldaLearn(X, y):
 	# Inputs
 	# X - a N x d matrix with each row corresponding to a training example
 	# y - a N x 1 column vector indicating the labels for each training example
@@ -18,47 +19,160 @@ import sys
 	# covmat - A single d x d learnt covariance matrix
 
 	# IMPLEMENT THIS METHOD
-	return means,covmat
 
-def qdaLearn(X,y):
+	N = len(X)
+	d = len(X[0])
+	k = int(y.max())
+
+	means = np.zeros((int(k), int(d)))
+	sum = np.zeros((1, d))
+	count = 0
+	covmat = np.zeros((int(d), int(d)))
+
+	for cls in range(int(k)):
+		for array in range(N):
+			if y[array] == cls + 1:
+				sum[0, :] = sum[0, :] + X[array, :]
+				count = count + 1
+		means[cls, :] = sum[0, :] / count
+		sum[:, :] = 0
+		count = 0
+
+	total_mean = np.zeros((1, int(d)))
+	# print(total_mean.shape)
+	total_mean[0, :] = np.mean(X, axis=0)
+	# print(total_mean.shape)
+	ssum = np.zeros((d, d))
+	for array in range(N):
+		A = np.zeros((1, int(d)))
+		A[0, :] = X[array, :] - total_mean
+		ssum = ssum + np.dot((A).T, (A))
+	covmat = ssum / N
+
+	# LDA covariance 구할 때 mean도 class 구분 없이 계산해서 구하기?
+
+	return means, covmat
+
+
+def qdaLearn(X, y):
 	# Inputs
 	# X - a N x d matrix with each row corresponding to a training example
 	# y - a N x 1 column vector indicating the labels for each training example
-    #
+	#
 	# Outputs
 	# means - A k x d matrix containing learnt means for each of the k classes
 	# covmats - A list of k d x d learnt covariance matrices for each of the k classes
 
 	# IMPLEMENT THIS METHOD
-	return means,covmats
 
-def ldaTest(means,covmat,Xtest,ytest):
-    # Inputs
-    # means, covmat - parameters of the LDA model
-    # Xtest - a N x d matrix with each row corresponding to a test example
-    # ytest - a N x 1 column vector indicating the labels for each test example
-    # Outputs
-    # acc - A scalar accuracy value
-    # ypred - N x 1 column vector indicating the predicted labels
+	N = len(X)
+	d = len(X[0])
+	k = int(y.max())
 
-	# IMPLEMENT THIS METHOD
-	return acc,ypred
+	means = np.zeros((k, d))
+	sum = np.zeros((1, d))
+	count = 0
+	covmats = np.zeros((k, d, d))  # 3-dimension
 
-def qdaTest(means,covmats,Xtest,ytest):
-    # Inputs
-    # means, covmats - parameters of the QDA model
-    # Xtest - a N x d matrix with each row corresponding to a test example
-    # ytest - a N x 1 column vector indicating the labels for each test example
-    # Outputs
+	for cls in range(k):
+		for array in range(N):
+			if y[array] == cls + 1:
+				sum[0, :] = sum[0, :] + X[array, :]
+				count = count + 1
+		means[cls, :] = sum[0, :] / count
+		sum[:, :] = 0
+		count = 0
+
+	ssum = np.zeros((d, d))
+	for cls in range(k):
+		for array in range(N):
+			A = np.zeros((1, int(d)))
+			if y[array] == cls + 1:
+				A[0, :] = X[array, :] - means[cls, :]
+				ssum = ssum + np.dot(A.T, A)
+				count = count + 1
+		covmats[cls, :, :] = ssum[:, :] / count
+		ssum[:, :] = 0
+		count = 0
+
+	# 자료형 맞추기 -> mean 구할 때 끊어지지 않는지
+	# N, N-1 등 시작 포인트 0/1 구분
+	# for i in range(k) 하면 i가 1부터 k까지 or 0부터 k-1까지?
+
+	return means, covmats
+
+
+def ldaTest(means, covmat, Xtest, ytest):
+	# Inputs
+	# means, covmat - parameters of the LDA model
+	# Xtest - a N x d matrix with each row corresponding to a test example
+	# ytest - a N x 1 column vector indicating the labels for each test example
+	# Outputs
 	# acc - A scalar accuracy value
 	# ypred - N x 1 column vector indicating the predicted labels
 
 	# IMPLEMENT THIS METHOD
-	return acc,ypred"""
+
+	k = len(means)
+	N = len(Xtest)
+	d = len(Xtest[0])
+	P = np.zeros((int(k), 1))
+	ypred = np.zeros((int(N), 1))
+
+	for i in range(N):
+		for j in range(k):
+			B = np.zeros((1, int(d)))
+			B[0, :] = Xtest[i, :] - means[j, :]
+			# P[j] = (Xtest[i, :] - means[j, :]) * inv(covmat) * np.transpose(Xtest[i, :] - means[j, :])
+			# print(covmat.shape)
+			# print(B.shape)
+			P[j] = np.dot(B, np.dot(inv(covmat), B.T))
+		# print(P[j])
+		pred_cls = np.argmin(P)
+		# print(pred_cls)
+		ypred[i] = pred_cls + 1
+	# print(ypred)
+
+	acc = np.mean((ypred == ytest).astype(float)) * 100
+
+	return acc, ypred
+
+
+def qdaTest(means, covmats, Xtest, ytest):
+	# Inputs
+	# means, covmats - parameters of the QDA model
+	# Xtest - a N x d matrix with each row corresponding to a test example
+	# ytest - a N x 1 column vector indicating the labels for each test example
+	# Outputs
+	# acc - A scalar accuracy value
+	# ypred - N x 1 column vector indicating the predicted labels
+
+	# IMPLEMENT THIS METHOD
+
+	k = len(means)
+	N = len(Xtest)
+	d = len(Xtest[0])
+	P = np.zeros((int(k), 1))
+	ypred = np.zeros((int(N), 1))
+
+	for i in range(N):
+		for j in range(k):
+			B = np.zeros((1, int(d)))
+			B[0, :] = Xtest[i, :] - means[j, :]
+			# print(covmats[j,:,:])
+			# print(det(covmats[j,:,:]))
+			# print(sqrt(det(covmats[j,:,:])))
+			P[j] = (1 / sqrt(det(covmats[j, :, :]))) * np.exp(-np.dot(B, np.dot(inv(covmats[j, :, :]), B.T)) / 2)
+		cls = np.argmax(P)
+		ypred[i] = cls + 1
+
+	acc = np.mean((ypred == ytest).astype(float)) * 100
+
+	return acc, ypred
 
 def learnOLERegression(X,y):
     # Inputs:`
-    # X = N x d 
+    # X = N x d 43
     # y = N x 1                                                               
     # Output: 
     # w = d x 1
@@ -113,14 +227,19 @@ def mapNonLinear(x,p):
     # Outputs:                                                                 
     # Xp - (N x (p+1))
     x1 = x.reshape(-1, 1)
+    N = len(x1)
     recur = x1
-    Xp =x1
-    for i in range(p) :
-	    recur = recur * x1
-	    Xp = np.append(Xp, recur, 1)
+    if(p==0) :
+	    Xp = np.ones((N, 1))
+    elif ( p > 0 ) :
+	    Xp = np.ones((N, 1))
+	    Xp = np.append(Xp, x1, 1)
+	    for i in range(p) :
+		    recur = recur * x1
+		    Xp = np.append(Xp, recur, 1)
     # IMPLEMENT THIS METHOD
     return Xp
-"""
+
 # Main script
 
 # Problem 1
@@ -152,17 +271,18 @@ plt.subplot(1, 2, 1)
 
 zacc,zldares = ldaTest(means,covmat,xx,np.zeros((xx.shape[0],1)))
 plt.contourf(x1,x2,zldares.reshape((x1.shape[0],x2.shape[0])),alpha=0.3)
-plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest)
+plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest.flatten())
 plt.title('LDA')
 
 plt.subplot(1, 2, 2)
 
 zacc,zqdares = qdaTest(means,covmats,xx,np.zeros((xx.shape[0],1)))
 plt.contourf(x1,x2,zqdares.reshape((x1.shape[0],x2.shape[0])),alpha=0.3)
-plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest)
+plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest.flatten())
 plt.title('QDA')
 
-plt.show()"""
+plt.show()
+
 # Problem 2
 if sys.version_info.major == 2:
     X,y,Xtest,ytest = pickle.load(open('diabetes.pickle','rb'))
@@ -241,14 +361,15 @@ lambda_opt = 0.06 # REPLACE THIS WITH lambda_opt estimated from Problem 3
 mses5_train = np.zeros((pmax,2))
 mses5 = np.zeros((pmax,2))
 for p in range(pmax):
-    Xd = mapNonLinear(X[:,2],p)
-    Xdtest = mapNonLinear(Xtest[:,2],p)
-    w_d1 = learnRidgeRegression(Xd,y,0)
-    mses5_train[p,0] = testOLERegression(w_d1,Xd,y)
-    mses5[p,0] = testOLERegression(w_d1,Xdtest,ytest)
-    w_d2 = learnRidgeRegression(Xd,y,lambda_opt)
-    mses5_train[p,1] = testOLERegression(w_d2,Xd,y)
-    mses5[p,1] = testOLERegression(w_d2,Xdtest,ytest)
+	print(p)
+	Xd = mapNonLinear(X[:,2],p)
+	Xdtest = mapNonLinear(Xtest[:,2],p)
+	w_d1 = learnRidgeRegression(Xd,y,0)
+	mses5_train[p,0] = testOLERegression(w_d1,Xd,y)
+	mses5[p,0] = testOLERegression(w_d1,Xdtest,ytest)
+	w_d2 = learnRidgeRegression(Xd,y,lambda_opt)
+	mses5_train[p,1] = testOLERegression(w_d2,Xd,y)
+	mses5[p,1] = testOLERegression(w_d2,Xdtest,ytest)
 
 fig = plt.figure(figsize=[12,6])
 plt.subplot(1, 2, 1)
