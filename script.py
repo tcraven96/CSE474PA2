@@ -49,8 +49,6 @@ def ldaLearn(X, y):
 		ssum = ssum + np.dot((A).T, (A))
 	covmat = ssum / N
 
-	# LDA covariance 구할 때 mean도 class 구분 없이 계산해서 구하기?
-
 	return means, covmat
 
 
@@ -94,10 +92,6 @@ def qdaLearn(X, y):
 		covmats[cls, :, :] = ssum[:, :] / count
 		ssum[:, :] = 0
 		count = 0
-
-	# 자료형 맞추기 -> mean 구할 때 끊어지지 않는지
-	# N, N-1 등 시작 포인트 0/1 구분
-	# for i in range(k) 하면 i가 1부터 k까지 or 0부터 k-1까지?
 
 	return means, covmats
 
