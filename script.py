@@ -8,7 +8,8 @@ import matplotlib.pyplot as plt
 import pickle
 import sys
 
-def ldaLearn(X,y):
+
+def ldaLearn(X, y):
 	# Inputs
 	# X - a N x d matrix with each row corresponding to a training example
 	# y - a N x 1 column vector indicating the labels for each training example
@@ -18,47 +19,154 @@ def ldaLearn(X,y):
 	# covmat - A single d x d learnt covariance matrix
 
 	# IMPLEMENT THIS METHOD
-	return means,covmat
 
-def qdaLearn(X,y):
+	N = len(X)
+	d = len(X[0])
+	k = int(y.max())
+
+	means = np.zeros((int(k), int(d)))
+	sum = np.zeros((1, d))
+	count = 0
+	covmat = np.zeros((int(d), int(d)))
+
+	for cls in range(int(k)):
+		for array in range(N):
+			if y[array] == cls + 1:
+				sum[0, :] = sum[0, :] + X[array, :]
+				count = count + 1
+		means[cls, :] = sum[0, :] / count
+		sum[:, :] = 0
+		count = 0
+
+	total_mean = np.zeros((1, int(d)))
+	# print(total_mean.shape)
+	total_mean[0, :] = np.mean(X, axis=0)
+	# print(total_mean.shape)
+	ssum = np.zeros((d, d))
+	for array in range(N):
+		A = np.zeros((1, int(d)))
+		A[0, :] = X[array, :] - total_mean
+		ssum = ssum + np.dot((A).T, (A))
+	covmat = ssum / N
+
+	return means, covmat
+
+
+def qdaLearn(X, y):
 	# Inputs
 	# X - a N x d matrix with each row corresponding to a training example
 	# y - a N x 1 column vector indicating the labels for each training example
-    #
+	#
 	# Outputs
 	# means - A k x d matrix containing learnt means for each of the k classes
 	# covmats - A list of k d x d learnt covariance matrices for each of the k classes
 
 	# IMPLEMENT THIS METHOD
-	return means,covmats
 
-def ldaTest(means,covmat,Xtest,ytest):
-    # Inputs
-    # means, covmat - parameters of the LDA model
-    # Xtest - a N x d matrix with each row corresponding to a test example
-    # ytest - a N x 1 column vector indicating the labels for each test example
-    # Outputs
-    # acc - A scalar accuracy value
-    # ypred - N x 1 column vector indicating the predicted labels
+	N = len(X)
+	d = len(X[0])
+	k = int(y.max())
 
-	# IMPLEMENT THIS METHOD
-	return acc,ypred
+	means = np.zeros((k, d))
+	sum = np.zeros((1, d))
+	count = 0
+	covmats = np.zeros((k, d, d))  # 3-dimension
 
-def qdaTest(means,covmats,Xtest,ytest):
-    # Inputs
-    # means, covmats - parameters of the QDA model
-    # Xtest - a N x d matrix with each row corresponding to a test example
-    # ytest - a N x 1 column vector indicating the labels for each test example
-    # Outputs
+	for cls in range(k):
+		for array in range(N):
+			if y[array] == cls + 1:
+				sum[0, :] = sum[0, :] + X[array, :]
+				count = count + 1
+		means[cls, :] = sum[0, :] / count
+		sum[:, :] = 0
+		count = 0
+
+	ssum = np.zeros((d, d))
+	for cls in range(k):
+		for array in range(N):
+			A = np.zeros((1, int(d)))
+			if y[array] == cls + 1:
+				A[0, :] = X[array, :] - means[cls, :]
+				ssum = ssum + np.dot(A.T, A)
+				count = count + 1
+		covmats[cls, :, :] = ssum[:, :] / count
+		ssum[:, :] = 0
+		count = 0
+
+	return means, covmats
+
+
+def ldaTest(means, covmat, Xtest, ytest):
+	# Inputs
+	# means, covmat - parameters of the LDA model
+	# Xtest - a N x d matrix with each row corresponding to a test example
+	# ytest - a N x 1 column vector indicating the labels for each test example
+	# Outputs
 	# acc - A scalar accuracy value
 	# ypred - N x 1 column vector indicating the predicted labels
 
 	# IMPLEMENT THIS METHOD
-	return acc,ypred
+
+	k = len(means)
+	N = len(Xtest)
+	d = len(Xtest[0])
+	P = np.zeros((int(k), 1))
+	ypred = np.zeros((int(N), 1))
+
+	for i in range(N):
+		for j in range(k):
+			B = np.zeros((1, int(d)))
+			B[0, :] = Xtest[i, :] - means[j, :]
+			# P[j] = (Xtest[i, :] - means[j, :]) * inv(covmat) * np.transpose(Xtest[i, :] - means[j, :])
+			# print(covmat.shape)
+			# print(B.shape)
+			P[j] = np.dot(B, np.dot(inv(covmat), B.T))
+		# print(P[j])
+		pred_cls = np.argmin(P)
+		# print(pred_cls)
+		ypred[i] = pred_cls + 1
+	# print(ypred)
+
+	acc = np.mean((ypred == ytest).astype(float)) * 100
+
+	return acc, ypred
+
+
+def qdaTest(means, covmats, Xtest, ytest):
+	# Inputs
+	# means, covmats - parameters of the QDA model
+	# Xtest - a N x d matrix with each row corresponding to a test example
+	# ytest - a N x 1 column vector indicating the labels for each test example
+	# Outputs
+	# acc - A scalar accuracy value
+	# ypred - N x 1 column vector indicating the predicted labels
+
+	# IMPLEMENT THIS METHOD
+
+	k = len(means)
+	N = len(Xtest)
+	d = len(Xtest[0])
+	P = np.zeros((int(k), 1))
+	ypred = np.zeros((int(N), 1))
+
+	for i in range(N):
+		for j in range(k):
+			B = np.zeros((1, int(d)))
+			B[0, :] = Xtest[i, :] - means[j, :]
+			# print(covmats[j,:,:])
+			# print(det(covmats[j,:,:]))
+			# print(sqrt(det(covmats[j,:,:])))
+			P[j] = (1 / sqrt(det(covmats[j, :, :]))) * np.exp(-np.dot(B, np.dot(inv(covmats[j, :, :]), B.T)) / 2)
+		cls = np.argmax(P)
+		ypred[i] = cls + 1
+
+	acc = np.mean((ypred == ytest).astype(float)) * 100
+
+	return acc, ypred
 
 def learnOLERegression(X,y):
     # Inputs:`
-    # X = N x d 
+    # X = N x d 43
     # y = N x 1                                                               
     # Output: 
     # w = d x 1
@@ -75,14 +183,17 @@ def learnRidgeRegression(X,y,lambd):
     # Output:                                                                  
     # w = d x 1                                                                
 
-    # IMPLEMENT THIS METHOD                                                   
+    # IMPLEMENT THIS METHOD
+    length = len(X[0])
+
+    w = (np.dot(np.dot(inv(lambd*np.eye(length)+np.dot(X.T,X)),X.T),y))
     return w
 
 def testOLERegression(w,Xtest,ytest):
     # Inputs:
     # w = d x 1
     # Xtest = N x d
-    # ytest = X x 1
+    # ytest = N x 1
     # Output:
     # mse
     N = len(Xtest)
@@ -94,21 +205,34 @@ def regressionObjVal(w, X, y, lambd):
 
     # compute squared error (scalar) and gradient of squared error with respect
     # to w (vector) for the given data X and y and the regularization parameter
-    # lambda                                                                  
-	error = 1
-	error_grad = 1
-	# IMPLEMENT THIS METHOD
-	return error, error_grad
+    # lambda
+    w1 = w.reshape(-1, 1)
+    error = np.dot((y-np.dot(X,w1)).T, (y-np.dot(X,w1)))/2 + ((lambd/2)*np.dot(w1.T, w1))
+    error_grad = np.dot(np.transpose(X), (np.dot(X,w1)-y)) + (lambd * w1)
+    error = error.flatten()
+    error_grad = error_grad.flatten()
+    # IMPLEMENT THIS METHOD
+    return error, error_grad
 
 def mapNonLinear(x,p):
     # Inputs:                                                                  
     # x - a single column vector (N x 1)                                       
     # p - integer (>= 0)                                                       
     # Outputs:                                                                 
-    # Xp - (N x (p+1)) 
-	Xp = 1
+    # Xp - (N x (p+1))
+    x1 = x.reshape(-1, 1)
+    N = len(x1)
+    recur = x1
+    if(p==0) :
+	    Xp = np.ones((N, 1))
+    elif ( p > 0 ) :
+	    Xp = np.ones((N, 1))
+	    Xp = np.append(Xp, x1, 1)
+	    for i in range(p) :
+		    recur = recur * x1
+		    Xp = np.append(Xp, recur, 1)
     # IMPLEMENT THIS METHOD
-	return Xp
+    return Xp
 
 # Main script
 
@@ -141,17 +265,18 @@ plt.subplot(1, 2, 1)
 
 zacc,zldares = ldaTest(means,covmat,xx,np.zeros((xx.shape[0],1)))
 plt.contourf(x1,x2,zldares.reshape((x1.shape[0],x2.shape[0])),alpha=0.3)
-plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest)
+plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest.flatten())
 plt.title('LDA')
 
 plt.subplot(1, 2, 2)
 
 zacc,zqdares = qdaTest(means,covmats,xx,np.zeros((xx.shape[0],1)))
 plt.contourf(x1,x2,zqdares.reshape((x1.shape[0],x2.shape[0])),alpha=0.3)
-plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest)
+plt.scatter(Xtest[:,0],Xtest[:,1],c=ytest.flatten())
 plt.title('QDA')
 
 plt.show()
+
 # Problem 2
 if sys.version_info.major == 2:
     X,y,Xtest,ytest = pickle.load(open('diabetes.pickle','rb'))
@@ -177,6 +302,7 @@ lambdas = np.linspace(0, 1, num=k)
 i = 0
 mses3_train = np.zeros((k,1))
 mses3 = np.zeros((k,1))
+
 for lambd in lambdas:
     w_l = learnRidgeRegression(X_i,y,lambd)
     mses3_train[i] = testOLERegression(w_l,X_i,y)
@@ -191,6 +317,7 @@ plt.plot(lambdas,mses3)
 plt.title('MSE for Test Data')
 
 plt.show()
+
 # Problem 4
 k = 101
 lambdas = np.linspace(0, 1, num=k)
@@ -200,13 +327,13 @@ mses4 = np.zeros((k,1))
 opts = {'maxiter' : 20}    # Preferred value.                                                
 w_init = np.ones((X_i.shape[1],1))
 for lambd in lambdas:
-    args = (X_i, y, lambd)
-    w_l = minimize(regressionObjVal, w_init, jac=True, args=args,method='CG', options=opts)
-    w_l = np.transpose(np.array(w_l.x))
-    w_l = np.reshape(w_l,[len(w_l),1])
-    mses4_train[i] = testOLERegression(w_l,X_i,y)
-    mses4[i] = testOLERegression(w_l,Xtest_i,ytest)
-    i = i + 1
+	args = (X_i, y, lambd)
+	w_l = minimize(regressionObjVal, w_init, jac=True, args=args,method='CG', options=opts)
+	w_l = np.transpose(np.array(w_l.x))
+	w_l = np.reshape(w_l,[len(w_l),1])
+	mses4_train[i] = testOLERegression(w_l,X_i,y)
+	mses4[i] = testOLERegression(w_l,Xtest_i,ytest)
+	i = i + 1
 fig = plt.figure(figsize=[12,6])
 plt.subplot(1, 2, 1)
 plt.plot(lambdas,mses4_train)
@@ -224,17 +351,18 @@ plt.show()
 
 # Problem 5
 pmax = 7
-lambda_opt = 0 # REPLACE THIS WITH lambda_opt estimated from Problem 3
+lambda_opt = 0.06 # REPLACE THIS WITH lambda_opt estimated from Problem 3
 mses5_train = np.zeros((pmax,2))
 mses5 = np.zeros((pmax,2))
 for p in range(pmax):
-    Xd = mapNonLinear(X[:,2],p)
-    Xdtest = mapNonLinear(Xtest[:,2],p)
-    w_d1 = learnRidgeRegression(Xd,y,0)
-    mses5_train[p,0] = testOLERegression(w_d1,Xd,y)
-    mses5[p,0] = testOLERegression(w_d1,Xdtest,ytest)
-    w_d2 = learnRidgeRegression(Xd,y,lambda_opt)
-    mses5_train[p,1] = testOLERegression(w_d2,Xd,y)
+	print(p)
+	Xd = mapNonLinear(X[:,2],p)
+	Xdtest = mapNonLinear(Xtest[:,2],p)
+	w_d1 = learnRidgeRegression(Xd,y,0)
+	mses5_train[p,0] = testOLERegression(w_d1,Xd,y)
+	mses5[p,0] = testOLERegression(w_d1,Xdtest,ytest)
+	w_d2 = learnRidgeRegression(Xd,y,lambda_opt)
+	mses5_train[p,1] = testOLERegression(w_d2,Xd,y)
 	mses5[p,1] = testOLERegression(w_d2,Xdtest,ytest)
 
 fig = plt.figure(figsize=[12,6])
